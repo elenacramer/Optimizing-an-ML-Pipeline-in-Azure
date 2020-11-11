@@ -6,21 +6,21 @@ In this project, we build and optimize an Azure ML pipeline using the Python SDK
 This model is then compared to an Azure AutoML run.
 
 ## Table of Contents
-[Problem Statement](##Problem Statement)
+[Problem Statement](##problem)
 [Approaches](##Approaches)
-[Scikit-learn Pipeline](###Scikit-learn Pipeline)
-[AutoML](###AutoML)
-[Summary Results](##Summary Results)
-[Pipeline Comparison](##Pipeline Comparison)
+    [Scikit-learn Pipeline](###scikit-learn)
+    [AutoML](###AutoML)
+[Summary Results](##summary)
+[Pipeline Comparison](##comparison)
 
-## Problem Statement
+## Problem Statement <a name="problem"></a>
 The dataset contains text data collected from phone calls to bank in responce to a marketing campaign. It holds information, such as age, marital status, job, education ect. The problem is a classification problem and the aim is to predict whether a client will subscribe to a term deposit, repsresented by variable 'y'. That is, we have two classes; success (class 1) or not (class 0). There are in total 21 features, including the target variable, and 32.950 rows. 
 
 ## Approaches
 We applied two different methods to the problem. First we used a Sckiti-learn model to fit the data. The hyperparameters of that model were tuned using HyperDrive. Then we applied an AutoML model and compared the result.
  
 
-### Scikit-learn Pipeline
+### Scikit-learn Pipeline <a name="scikit-learn"></a>
 
 As a first task we need to load and prepare the data. The script *train.py* does the required steps, in particular: 
 
@@ -68,12 +68,12 @@ class_prob = fitted_model.predict_proba(X_test)
 Every AutoML model has featurization automatically applied. Featurization includes automated feature engineering (when "featurization": 'auto') and scaling and normalization, which then impacts the selected algorithm and its hyperparameter values. We can access this information using the *fitted_model*. Here is the featurization summary of all the input features:
 
 
-## Summary Results
+## Summary Results <a name="summary"></a>
 We obtained the following accuracy scores:  
 - HyperDrive: 0.9073 (Hyperparameters used: C=0.4294, max_iter=130)
 - AutoMl: 0.91502 (best model(s): MaxAbsScaler, XGBoostClassifier)
 
-## Pipeline Comparison
+## Pipeline Comparison <a name="comparison"></a>
 Both for applying HyperDrive and AutoML we need to create a workspace, initiate an experiment, load the data and clean / prepare it. The difference between the two methods is that HyperDrive requires "more coding", meaning:
 - we must have a custom-coded machine learning model, such as logistic regression, otherwise, HyperDrive will not know what model to optimize the parameters for,
 - we need to specify the parameter search space, 

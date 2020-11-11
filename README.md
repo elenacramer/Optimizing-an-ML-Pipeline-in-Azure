@@ -15,7 +15,7 @@ This model is then compared to an Azure AutoML run.
 - [Potential Improvements](##improve)
 
 ## Problem Statement <a name="problem"></a>
-The dataset contains text data collected from phone calls to bank in responce to a marketing campaign. It holds information, such as age, marital status, job, education ect. The problem is a classification problem and the aim is to predict whether a client will subscribe to a term deposit, repsresented by variable 'y'. That is, we have two classes; success (class 1) or not (class 0). There are in total 21 features, including the target variable, and 32.950 rows. 
+The dataset contains text data collected from phone calls to a Portugeese bank in response to a marketing campaign. It holds information, such as age, marital status, job, education ect. The problem is a classification problem and the aim is to predict whether a client will subscribe to a term deposit, repsresented by the variable 'y'. That is, we have two classes; success (class 1) or not (class 0). There are in total 21 features, including the target variable, and 32.950 rows. 
 
 ## Approaches
 We applied two different methods to the problem. First we used a Sckiti-learn model to fit the data. The hyperparameters of that model were tuned using HyperDrive. Then we applied an AutoML model and compared the result.
@@ -54,6 +54,7 @@ We collect and save the best model, that is, logistic regression with the tuned 
 ```
 best_run=hyperdrive_run.get_best_run_by_primary_metric()
 best_run_metrics = best_run.get_metrics()
+# Save best model
 best_model = best_run.register_model(model_name='model_log_hd', model_path='outputs/model_hd.joblib')
 
 ```
@@ -97,7 +98,7 @@ As for the Scikit-learn Pipeline, we need to load and prepare the data. An AutoM
 automl_config = AutoMLConfig(…)
 automl_run = exp.submit(automl_config, show_output=True)
 
-# Retrieve and save your best automl model
+# Retrieve and save best automl model
 automl_run, fitted_automl_model = automl_run.get_output()
 joblib.dump(fitted_automl_model, "fitted_automl_model.joblib")
 ```
@@ -143,6 +144,12 @@ fitted_automl_model.named_steps['datatransformer'].get_featurization_summary()
   'Transformations': ['MeanImputer']},
 ...
 ```
+where 
+- RawFeatureName: Input feature/column name from the dataset provided, 
+- TypeDetected:	Detected datatype of the input feature, 
+- Dropped: Indicates if the input feature was dropped or used, 
+- EngineeringFeatureCount: Number of features generated through automated feature engineering transforms, 
+- Transformations: List of transformations applied to input features to generate engineered features.
 
 ## Summary Results <a name="summary"></a>
 We obtained the following accuracy scores:  
@@ -158,11 +165,9 @@ Both for applying HyperDrive and AutoML we need to create a workspace, initiate 
 - define an early termination policy 
 All those steps are not necessary when applying AutoML, i.e. AutoML does it for us. Another difference is the dataset. 
 
-AutoML has a slighty better accuracy score then HyperDrive. This difference might be because the AutoML run used the XXX models and not logistic regression. 
+AutoML has a slighty better accuracy score then HyperDrive. This difference might be because the model of the best AutoML run was a different model than the logistic regression applied in Hyper Drive.  
 
 ## Potential Improvements <a name="improve"></a>
 Here are some possibilities we can explore to perhaps improve the score from the Sckikit-learn pipeline:
-- Try different approaches to handle categorical features, especially those with the biggest possible value range such as "job" 
-- In the HyperDriveConfig object we can 
-    - choose the more exhaustive Grid Sampling strategy 
-    - include an *delay_evaluation* interval at the BanditPolicy 
+- Try different approaches to handle categorical features, especially those with the biggest possible value range (e.g. there are 12 different possibilities for the feature 'job'),  
+- In the HyperDriveConfig object we can choose the more exhaustive Grid Sampling strategy.

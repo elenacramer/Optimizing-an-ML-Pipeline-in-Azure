@@ -6,12 +6,12 @@ In this project, we build and optimize an Azure ML pipeline using the Python SDK
 This model is then compared to an Azure AutoML run.
 
 ## Table of Contents
-[Problem Statement](##problem)
-[Approaches](##Approaches)
-    [Scikit-learn Pipeline](###scikit-learn)
-    [AutoML](###AutoML)
-[Summary Results](##summary)
-[Pipeline Comparison](##comparison)
+- [Problem Statement](##problem)
+- [Approaches](##Approaches)
+    - [Scikit-learn Pipeline](###scikit-learn)
+    - [AutoML](###AutoML)
+- [Summary Results](##summary)
+- [Pipeline Comparison](##comparison)
 
 ## Problem Statement <a name="problem"></a>
 The dataset contains text data collected from phone calls to bank in responce to a marketing campaign. It holds information, such as age, marital status, job, education ect. The problem is a classification problem and the aim is to predict whether a client will subscribe to a term deposit, repsresented by variable 'y'. That is, we have two classes; success (class 1) or not (class 0). There are in total 21 features, including the target variable, and 32.950 rows. 

@@ -12,6 +12,7 @@ This model is then compared to an Azure AutoML run.
     - [AutoML](###AutoML)
 - [Summary Results](##summary)
 - [Pipeline Comparison](##comparison)
+- [Potential Improvements](##improve)
 
 ## Problem Statement <a name="problem"></a>
 The dataset contains text data collected from phone calls to bank in responce to a marketing campaign. It holds information, such as age, marital status, job, education ect. The problem is a classification problem and the aim is to predict whether a client will subscribe to a term deposit, repsresented by variable 'y'. That is, we have two classes; success (class 1) or not (class 0). There are in total 21 features, including the target variable, and 32.950 rows. 
@@ -40,8 +41,43 @@ We can tune the hyperparamters using HyperDrive via the *HyperDriveConfig* class
 - Primary metric name and goal: The name of the primary metric reported by the experiment runs (*accuracy*) and if we wish to maximize or minimize the primary metric (maximize). 
 - Max total runs and max concurrent runs : The maximum total number of runs to create and the maximum number of runs to execute concurrently. Note: the number of concurrent runs is gated on the resources available in the specified compute target. Hence ,we need to ensure that the compute target has the available resources for the desired concurrency.
 
-Next we submit the hyperdrive run to the experiment (i.e. launch an experiment) and show run details with the RunDeatails widget. We collect and save the best model, that is, logistic regression with the tuned hyperparameters which yield the best accuracy score. 
+Next we submit the hyperdrive run to the experiment (i.e. launch an experiment) and show run details with the RunDeatails widget:
 
+```
+hyperdrive_config = HyperDriveConfig(...)
+hyperdrive_run = exp.submit(hyperdrive_config, show_output=True)
+RunDetails(hyperdrive_run).show()
+
+```
+We collect and save the best model, that is, logistic regression with the tuned hyperparameters which yield the best accuracy score:
+
+```
+best_run=hyperdrive_run.get_best_run_by_primary_metric()
+best_run_metrics = best_run.get_metrics()
+best_model = best_run.register_model(model_name='model_log_hd', model_path='outputs/model_hd.joblib')
+
+```
+We can access the best run id and accuracy score with:
+
+```
+print('Bets Run ID', best_run.id)
+print('\n Accuracy', best_run_metrics['Accuracy'])
+```
+```
+Bets Run ID HD_e55958f8-e1a2-460e-8346-a6b30e5f03ed_0
+Accuracy 0.9072837632776934
+```
+and the tuned hyperparameters, that is, parameters used at the best run by:
+
+```
+best_run.get_details()['runDefinition']['arguments']
+
+```
+
+```
+['--C', '0.5406580442529956', '--max_iter', '130']
+
+```
 
 ### AutoML
 As for the Scikit-learn Pipeline, we need to load and prepare the data. An AutoML run is done via the AutoConfig class. Here are the steps to apply an AutoML model:   
@@ -57,21 +93,61 @@ As for the Scikit-learn Pipeline, we need to load and prepare the data. An AutoM
 
 * To initiate the AutoMLConfig class we need to specify: experiment_timeout_minutes, task, primary_metric, training_data, (validation_data or n_cross_validation), label_column_name, compute_target. 
 
-As mentioned above, we can either pass in a test dataset or choose n_cross_validation for cross-validation. A third option is to do neither both, that is, only to pass a train set and after fitting to apply *predict_proba* method to the test set:
-
 ```
 automl_config = AutoMLConfig(…)
-automl_run = experiment.submit(automl_config …)
-best_run, fitted_model = automl_run.get_output()
-class_prob = fitted_model.predict_proba(X_test)
-```
-Every AutoML model has featurization automatically applied. Featurization includes automated feature engineering (when "featurization": 'auto') and scaling and normalization, which then impacts the selected algorithm and its hyperparameter values. We can access this information using the *fitted_model*. Here is the featurization summary of all the input features:
+automl_run = exp.submit(automl_config, show_output=True)
 
+# Retrieve and save your best automl model
+automl_run, fitted_automl_model = automl_run.get_output()
+joblib.dump(fitted_automl_model, "fitted_automl_model.joblib")
+```
+We can access the best run id and accuracy score with:
+
+```
+automl_run_metrics = automl_run.get_metrics()
+
+print('Bets Run ID', automl_run.id)
+print('\n Accuracy', automl_run_metrics['Accuracy'])
+```
+```
+Bets Run ID AutoML_736adb3b-75b7-4916-bef1-ff1f3c9b6b0c_30
+Accuracy 0.9180576631259484
+
+``` 
+We can get detailed information about the best run with *automl_run.get_details()*. The model which yields the best score is *VotingEnsemble*.
+
+Every AutoML model has featurization automatically applied. Featurization includes automated feature engineering (when "featurization": 'auto') and scaling and normalization, which then impacts the selected algorithm and its hyperparameter values. We can access this information using the *fitted_automl_model*. Here is the featurization summary of all the input features:
+```
+fitted_automl_model.named_steps['datatransformer'].get_featurization_summary()
+```
+```
+[{'RawFeatureName': 'age',
+  'TypeDetected': 'Numeric',
+  'Dropped': 'No',
+  'EngineeredFeatureCount': 1,
+  'Transformations': ['MeanImputer']},
+ {'RawFeatureName': 'marital',
+  'TypeDetected': 'Numeric',
+  'Dropped': 'No',
+  'EngineeredFeatureCount': 1,
+  'Transformations': ['MeanImputer']},
+ {'RawFeatureName': 'default',
+  'TypeDetected': 'Numeric',
+  'Dropped': 'No',
+  'EngineeredFeatureCount': 1,
+  'Transformations': ['MeanImputer']},
+ {'RawFeatureName': 'housing',
+  'TypeDetected': 'Numeric',
+  'Dropped': 'No',
+  'EngineeredFeatureCount': 1,
+  'Transformations': ['MeanImputer']},
+...
+```
 
 ## Summary Results <a name="summary"></a>
 We obtained the following accuracy scores:  
-- HyperDrive: 0.9073 (Hyperparameters used: C=0.4294, max_iter=130)
-- AutoMl: 0.91502 (best model(s): MaxAbsScaler, XGBoostClassifier)
+- HyperDrive: 0.9073
+- AutoMl: 0.91806 (best model: VotingEnsemble)
 
 ## Pipeline Comparison <a name="comparison"></a>
 Both for applying HyperDrive and AutoML we need to create a workspace, initiate an experiment, load the data and clean / prepare it. The difference between the two methods is that HyperDrive requires "more coding", meaning:
@@ -83,3 +159,10 @@ Both for applying HyperDrive and AutoML we need to create a workspace, initiate 
 All those steps are not necessary when applying AutoML, i.e. AutoML does it for us. Another difference is the dataset. 
 
 AutoML has a slighty better accuracy score then HyperDrive. This difference might be because the AutoML run used the XXX models and not logistic regression. 
+
+## Potential Improvements <a name="improve"></a>
+Here are some possibilities we can explore to perhaps improve the score from the Sckikit-learn pipeline:
+- Try different approaches to handle categorical features, especially those with the biggest possible value range such as "job" 
+- In the HyperDriveConfig object we can 
+    - choose the more exhaustive Grid Sampling strategy 
+    - include an *delay_evaluation* interval at the BanditPolicy 
